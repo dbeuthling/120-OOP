@@ -38,6 +38,18 @@ class Move
   end
 end
 
+class Rock < Move
+  
+end
+
+class Scissors < Move
+
+end
+
+class Paper
+  
+end
+
 class Player
   attr_accessor :move, :name, :score
 
