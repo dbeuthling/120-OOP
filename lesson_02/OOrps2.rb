@@ -75,13 +75,20 @@ class Human < Player
 end
 
 class Computer < Player
+  # include Winner
+
   def set_name
     self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
   end
 
   def choose
     # choice = Move::VALUES.sample
-    choice = 'rock'
+    p @rock_losing_percent
+    if @rock_losing_percent < 50
+      choice = 'rock'
+    else
+      choice = 'scissors'
+    end
     self.move = Move.new(choice)
     self.history << choice
   end
@@ -91,8 +98,8 @@ module Winner
   def initialize
     @winner = nil
     @history_of_wins = []
-    @rock_losing_percent = 0
     @rock_loser = 0
+    @rock_losing_percent = 0
   end
 
   def find_winner
@@ -126,22 +133,12 @@ module Winner
   end
 
   def winning_move
+    @rock_losing_percent = 0
     if @winner == :human && computer.history.last == 'rock'
          @rock_loser +=1
     end
-
-    # if @winner == :computer && computer.history.last == 'rock'
-    #   p @rock_loser -= 1 unless @rock_loser == 0
-    # end
-    (@rock_loser.to_f / computer.history.count('rock').to_f)*100
+    @rock_losing_percent = (@rock_loser.to_f / computer.history.count('rock').to_f)*100
   end
-      
-end
-
-
-class WinningMoves < Move
-
-
 end
 
 class RPSGame
@@ -212,13 +209,14 @@ class RPSGame
         system "clear"
         loop do
         human.choose
+        winning_move
         computer.choose
         display_moves
         find_winner
         display_winner
         increase_winner_score
         display_score
-        p winning_move
+        winning_move
         winner_history
         break if match_winner?
       end
