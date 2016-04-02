@@ -39,11 +39,12 @@ class Move
 end
 
 class Player
-  attr_accessor :move, :name, :score
+  attr_accessor :move, :name, :score, :history
 
   def initialize
     set_name
     @score = 0
+    @history = []
   end
 end
 
@@ -64,10 +65,12 @@ class Human < Player
     loop do
       puts "Choose rock, paper, scissors, lizard, or spock."
       choice = gets.chomp
+      # choice = 'paper'
       break if Move::VALUES.include? choice
       puts "Please enter rock, paper, scissors, lizard, or spock."
     end
     self.move = Move.new(choice)
+    self.history << choice
   end
 end
 
@@ -77,16 +80,78 @@ class Computer < Player
   end
 
   def choose
-    self.move = Move.new(Move::VALUES.sample)
+    # choice = Move::VALUES.sample
+    choice = 'rock'
+    self.move = Move.new(choice)
+    self.history << choice
   end
 end
 
+module Winner
+  def initialize
+    @winner = nil
+    @history_of_wins = []
+    @rock_losing_percent = 0
+    @rock_loser = 0
+  end
+
+  def find_winner
+    if human.move > computer.move
+      @winner = :human
+    elsif computer.move > human.move
+      @winner = :computer
+    else
+      @winner = :tie
+    end
+    @winner
+  end
+
+  def increase_winner_score
+    human.score += 1 if @winner == :human
+    computer.score += 1 if @winner == :computer
+  end
+
+  def display_winner
+    if @winner == :human
+      puts "#{human.name} wins!"
+    elsif @winner == :computer
+      puts "#{computer.name} wins!"
+    else
+      puts "It's a tie game!"
+    end
+  end
+
+  def winner_history
+    @history_of_wins << @winner
+  end
+
+  def winning_move
+    if @winner == :human && computer.history.last == 'rock'
+         @rock_loser +=1
+    end
+
+    # if @winner == :computer && computer.history.last == 'rock'
+    #   p @rock_loser -= 1 unless @rock_loser == 0
+    # end
+    (@rock_loser.to_f / computer.history.count('rock').to_f)*100
+  end
+      
+end
+
+
+class WinningMoves < Move
+
+
+end
+
 class RPSGame
-  attr_accessor :human, :computer
+  include Winner
+  attr_accessor :human, :computer, :winner
 
   def initialize
     @human = Human.new
     @computer = Computer.new
+    super
   end
 
   def display_welcome_message
@@ -102,32 +167,25 @@ class RPSGame
     puts "#{computer.name} chose #{computer.move}."
   end
 
-  def increase_winner_score
-    human.score += 1 if human.move > computer.move
-    computer.score += 1 if computer.move > human.move
-  end
-
-  def display_winner
-    if human.move > computer.move
-      puts "#{human.name} wins!"
-    elsif computer.move > human.move
-      puts "#{computer.name} wins!"
-    else
-      puts "It's a tie game!"
-    end
-  end
-
   def display_score
     puts "The score is #{computer.name}: #{computer.score}
              #{human.name}: #{human.score}"
   end
 
-  def winner?
+  def display_human_history
+    puts "Here is the history of your choices:\n #{human.history}"
+  end
+
+  def display_computer_history
+    puts "Here is the history of the comupter choices:\n #{computer.history}"
+  end
+
+  def match_winner?
     if computer.score == 3
-      puts "#{computer.name} wins!"
+      puts "#{computer.name} wins the match!"
       true
     elsif human.score == 3
-      puts "#{human.name} wins!"
+      puts "#{human.name} wins the match!"
       true
     end
   end
@@ -151,15 +209,21 @@ class RPSGame
   def play
     display_welcome_message
     loop do
-      loop do
+        system "clear"
+        loop do
         human.choose
         computer.choose
         display_moves
+        find_winner
         display_winner
         increase_winner_score
         display_score
-        break if winner?
+        p winning_move
+        winner_history
+        break if match_winner?
       end
+      display_human_history
+      display_computer_history
       break unless play_again?
     end
 
