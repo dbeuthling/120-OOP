@@ -38,68 +38,13 @@ class Move
   end
 end
 
-class Player
-  attr_accessor :move, :name, :score, :history
-
-  def initialize
-    set_name
-    @score = 0
-    @history = []
-  end
-end
-
-class Human < Player
-  def set_name
-    n = ''
-    loop do
-      puts "What is your name?"
-      n = gets.chomp
-      break unless n.empty?
-      puts "Please enter your name."
-    end
-    self.name = n
-  end
-
-  def choose
-    choice = nil
-    loop do
-      puts "Choose rock, paper, scissors, lizard, or spock."
-      choice = gets.chomp
-      # choice = 'paper'
-      break if Move::VALUES.include? choice
-      puts "Please enter rock, paper, scissors, lizard, or spock."
-    end
-    self.move = Move.new(choice)
-    self.history << choice
-  end
-end
-
-class Computer < Player
-  # include Winner
-
-  def set_name
-    self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
-  end
-
-  def choose
-    # choice = Move::VALUES.sample
-    p @rock_losing_percent
-    if @rock_losing_percent < 50
-      choice = 'rock'
-    else
-      choice = 'scissors'
-    end
-    self.move = Move.new(choice)
-    self.history << choice
-  end
-end
-
 module Winner
+  # attr_accessor :rock_loser
   def initialize
     @winner = nil
     @history_of_wins = []
-    @rock_loser = 0
-    @rock_losing_percent = 0
+    @@rock_losing_percent = 0
+    @@rock_loser = 0
   end
 
   def find_winner
@@ -133,13 +78,72 @@ module Winner
   end
 
   def winning_move
-    @rock_losing_percent = 0
     if @winner == :human && computer.history.last == 'rock'
-         @rock_loser +=1
+         p @@rock_loser +=1
     end
-    @rock_losing_percent = (@rock_loser.to_f / computer.history.count('rock').to_f)*100
+    @@rock_losing_percent = (@@rock_loser.to_f / computer.history.count('rock').to_f)*100
+  end
+      
+end
+
+class Player
+  include Winner
+  attr_accessor :move, :name, :score, :history, :rock_loser, :rock_losing_percent
+
+  def initialize
+    set_name
+    @score = 0
+    @history = []
+    super
   end
 end
+
+class Human < Player
+  def set_name
+    n = ''
+    loop do
+      puts "What is your name?"
+      n = gets.chomp
+      break unless n.empty?
+      puts "Please enter your name."
+    end
+    self.name = n
+  end
+
+  def choose
+    choice = nil
+    loop do
+      puts "Choose rock, paper, scissors, lizard, or spock."
+      choice = gets.chomp
+      # choice = 'paper'
+      break if Move::VALUES.include? choice
+      puts "Please enter rock, paper, scissors, lizard, or spock."
+    end
+    self.move = Move.new(choice)
+    p self.history << choice
+  end
+end
+
+class Computer < Player
+  def set_name
+    self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
+  end
+
+  def choose
+    if @@rock_losing_percent > 60
+    # choice = Move::VALUES.sample
+      choice = 'paper'
+    else
+      choice = Move::VALUES.sample
+    end
+    self.move = Move.new(choice)
+    self.history << choice
+    p @@rock_loser
+    p @@rock_losing_percent
+  end
+end
+
+
 
 class RPSGame
   include Winner
@@ -178,10 +182,10 @@ class RPSGame
   end
 
   def match_winner?
-    if computer.score == 3
+    if computer.score == 10
       puts "#{computer.name} wins the match!"
       true
-    elsif human.score == 3
+    elsif human.score == 10
       puts "#{human.name} wins the match!"
       true
     end
@@ -209,14 +213,13 @@ class RPSGame
         system "clear"
         loop do
         human.choose
-        winning_move
         computer.choose
         display_moves
         find_winner
         display_winner
         increase_winner_score
         display_score
-        winning_move
+        p winning_move
         winner_history
         break if match_winner?
       end
