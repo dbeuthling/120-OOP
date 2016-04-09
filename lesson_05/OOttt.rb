@@ -44,12 +44,6 @@ class Board
     @squares[num].marker = marker    
   end
 
-  def three_identical_markers?(squares)
-    markers = squares.select(&:marked?).collect(&:marker)
-    return false if markers.size != 3
-    markers.min == markers.max
-  end
-
   def winning_marker
     WINNING_LINES.each do |line|
       squares = @squares.values_at(*line)
@@ -62,6 +56,14 @@ class Board
 
   def reset
     initialize
+  end
+
+  private
+
+  def three_identical_markers?(squares)
+    markers = squares.select(&:marked?).collect(&:marker)
+    return false if markers.size != 3
+    markers.min == markers.max
   end
 end
 
@@ -96,6 +98,7 @@ end
 class TTTGame
   HUMAN_MARKER = "X"
   COMPUTER_MARKER = "O"
+  FIRST_TO_MOVE = HUMAN_MARKER
 
   attr_reader :board, :human, :computer
 
@@ -103,7 +106,32 @@ class TTTGame
     @board = Board.new
     @human = Player.new(HUMAN_MARKER)
     @computer = Player.new(COMPUTER_MARKER)
+    @current_marker = FIRST_TO_MOVE
   end
+
+  def play
+    clear_screen
+    display_welcome_message
+    loop do
+      display_board
+      loop do
+        current_player_moves
+        break if board.winner? || board.full?
+        # computer_moves
+        # break if board.winner? || board.full?
+        clear_screen_and_display_board
+      end
+      display_result
+      break unless play_again?
+      reset
+      display_play_again_message
+    end
+    display_goodbye_message
+  end
+
+
+private
+
   def display_welcome_message
     puts "Welcome to Tic Tac Toe!"
     puts ""
@@ -152,11 +180,17 @@ class TTTGame
     board[square] = computer.marker
   end
 
+  def human_turn?
+    @current_marker == HUMAN_MARKER
+  end
+
   def current_player_moves
-    if board.unmarked_keys.count.odd?
+    if human_turn?
       human_moves
+      @current_marker = COMPUTER_MARKER
     else
       computer_moves
+      @current_marker = HUMAN_MARKER
     end    
   end
 
@@ -177,31 +211,12 @@ class TTTGame
 
   def reset
     board.reset
+    @current_marker = FIRST_TO_MOVE
     clear_screen  
   end
 
   def display_play_again_message
     puts "Here we go!"
-  end
-
-  def play
-    clear_screen
-    display_welcome_message
-    loop do
-      display_board
-      loop do
-        current_player_moves
-        break if board.winner? || board.full?
-        # computer_moves
-        # break if board.winner? || board.full?
-        clear_screen_and_display_board
-      end
-      display_result
-      break unless play_again?
-      reset
-      display_play_again_message
-    end
-    display_goodbye_message
   end
 end
 
