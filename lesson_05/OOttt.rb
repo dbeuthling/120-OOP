@@ -13,15 +13,15 @@ class Board
 
   def draw
     puts '     |     |'
-    puts '  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}'
+    puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}"
     puts '     |     |'
     puts '-----+-----+-----'
     puts '     |     |'
-    puts '  #{@squares[4]}  |  #{@squares[5]}  |  #{@squares[6]}'
+    puts "  #{@squares[4]}  |  #{@squares[5]}  |  #{@squares[6]}"
     puts '     |     |'
     puts '-----+-----+-----'
     puts '     |     |'
-    puts '  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}'
+    puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}"
     puts '     |     |'
   end
 
@@ -86,8 +86,10 @@ end
 # Player
 class Player
   attr_reader :marker
+  attr_accessor :score
   def initialize(marker)
     @marker = marker
+    @score = 0
   end
 end
 
@@ -110,13 +112,20 @@ class TTTGame
     clear_screen
     display_welcome_message
     loop do
-      display_board
       loop do
-        current_player_moves
-        break if board.winner? || board.full?
-        clear_screen_and_display_board
+        clear_board
+        display_board
+        loop do
+          current_player_moves
+          break if board.winner? || board.full?
+          clear_screen_and_display_board
+        end
+        display_result
+        sleep(1)
+        add_point_to_winner
+        display_score
+        break if champion?
       end
-      display_result
       break unless play_again?
       reset
       display_play_again_message
@@ -125,6 +134,11 @@ class TTTGame
   end
 
   private
+
+  def clear_board
+    board.reset
+    @current_marker = FIRST_TO_MOVE
+  end
 
   def display_welcome_message
     puts 'Welcome to Tic Tac Toe!'
@@ -158,8 +172,13 @@ class TTTGame
     display_board
   end
 
+  def joinor(nums, sep=", ", word="or")
+    nums[-1] = "#{word} #{nums.last}" if nums.size > 1
+    nums.join(sep)
+  end
+
   def human_moves
-    puts "Choose a square #{board.unmarked_keys.join(', ')}."
+    puts "Choose a square #{joinor(board.unmarked_keys)}."
     square = nil
     loop do
       square = gets.chomp.to_i
@@ -188,6 +207,32 @@ class TTTGame
     end
   end
 
+  def champion?
+    if human.score == 5
+      puts "You win the match!"
+      return true
+    elsif computer.score == 5
+      puts "Computer wins the match!"
+      return true
+    end
+  end
+
+    def add_point_to_winner
+      case board.winning_marker
+      when human.marker
+        human.score += 1
+      when computer.marker
+        computer.score += 1
+      end
+    end
+
+    def display_score
+      clear_screen
+      puts "The computer has: #{computer.score} wins."
+      puts "You have: #{human.score} wins."
+      
+    end
+
   def play_again?
     again = nil
     loop do
@@ -205,6 +250,8 @@ class TTTGame
 
   def reset
     board.reset
+    human.score = 0
+    computer.score = 0
     @current_marker = FIRST_TO_MOVE
     clear_screen
   end
