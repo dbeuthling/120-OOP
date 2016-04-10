@@ -43,7 +43,6 @@ class Board
 
   def [](num)
     @squares[num]
-    
   end
 
   def winning_marker
@@ -157,7 +156,11 @@ class TTTGame
   def computer_moves
     if board.square_at_risk?
       board.square_at_risk?.marker = computer.marker
+    elsif board[5].marker == " "
+      p 'empty'
+      board[5] = computer.marker
     else
+
       square = board.unmarked_keys.sample
       board[square] = computer.marker
     end
