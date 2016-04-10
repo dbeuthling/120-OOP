@@ -41,12 +41,33 @@ class Board
     @squares[num].marker = marker
   end
 
+  def [](num)
+    @squares[num]
+    
+  end
+
   def winning_marker
     WINNING_LINES.each do |line|
       squares = @squares.values_at(*line)
       return squares.first.marker if three_identical_markers?(squares)
     end
     nil
+  end
+
+  def square_at_risk?
+    WINNING_LINES.each do |line|
+      squares = @squares.values_at(*line)
+      if two_identical_markers?(squares)
+        return squares.select {|square| square.marker == " "}[0]
+      end
+    end
+    nil
+  end
+
+  def two_identical_markers?(squares)
+    markers = squares.select(&:marked?).collect(&:marker)
+    return false if markers.size != 2
+    markers.min == markers.max
   end
 
   def reset
@@ -133,6 +154,15 @@ class TTTGame
     display_goodbye_message
   end
 
+  def computer_moves
+    if board.square_at_risk?
+      board.square_at_risk?.marker = computer.marker
+    else
+      square = board.unmarked_keys.sample
+      board[square] = computer.marker
+    end
+  end
+
   private
 
   def clear_board
@@ -188,10 +218,7 @@ class TTTGame
     board[square] = human.marker
   end
 
-  def computer_moves
-    square = board.unmarked_keys.sample
-    board[square] = computer.marker
-  end
+  
 
   def human_turn?
     @current_marker == HUMAN_MARKER
