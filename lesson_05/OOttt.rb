@@ -53,20 +53,28 @@ class Board
     nil
   end
 
-  def square_at_risk?
+  def play_offence
+    square_at_risk?(TTTGame::COMPUTER_MARKER)
+  end
+
+  def play_defence
+    square_at_risk?(TTTGame::HUMAN_MARKER)
+  end
+
+  def square_at_risk?(marker_to_check)
     WINNING_LINES.each do |line|
       squares = @squares.values_at(*line)
-      if two_identical_markers?(squares)
-        return squares.select {|square| square.marker == " "}[0]
+      if two_identical_markers?(squares, marker_to_check)
+        return squares.select {|square| square.marker == Square::INITIAL_MARKER}[0]
       end
     end
     nil
   end
 
-  def two_identical_markers?(squares)
-    markers = squares.select(&:marked?).collect(&:marker)
-    return false if markers.size != 2
-    markers.min == markers.max
+  def two_identical_markers?(squares, marker_to_check)
+    markers = squares.collect(&:marker)
+    return true if markers.count(marker_to_check) == 2 && markers.include?(Square::INITIAL_MARKER)
+    false
   end
 
   def reset
@@ -117,7 +125,7 @@ end
 class TTTGame
   HUMAN_MARKER = 'X'.freeze
   COMPUTER_MARKER = 'O'.freeze
-  FIRST_TO_MOVE = HUMAN_MARKER
+  @first_to_move = HUMAN_MARKER
 
   attr_reader :board, :human, :computer
 
@@ -125,12 +133,17 @@ class TTTGame
     @board = Board.new
     @human = Player.new(HUMAN_MARKER)
     @computer = Player.new(COMPUTER_MARKER)
-    @current_marker = FIRST_TO_MOVE
+    @current_marker = @first_to_move
+    @player_name = nil
+    @computer_name = ["Ralph", "Jean-Claude", "Butter Passer"].sample
   end
 
   def play
     clear_screen
     display_welcome_message
+    set_player_name
+    introduce_computer
+    set_player_one
     loop do
       loop do
         clear_board
@@ -154,13 +167,13 @@ class TTTGame
   end
 
   def computer_moves
-    if board.square_at_risk?
-      board.square_at_risk?.marker = computer.marker
-    elsif board[5].marker == " "
-      p 'empty'
+    if board.play_offence
+      board.play_offence.marker = computer.marker
+    elsif board.play_defence
+      board.play_defence.marker = computer.marker
+    elsif board[5].marker == Square::INITIAL_MARKER
       board[5] = computer.marker
     else
-
       square = board.unmarked_keys.sample
       board[square] = computer.marker
     end
@@ -168,9 +181,32 @@ class TTTGame
 
   private
 
+  def set_player_one
+    puts "Would you like to go first? (y/n)"
+    first = gets.chomp.downcase
+    loop do
+      break if %w(y n).include?(first)
+      puts 'You must enter a y or n'
+    end
+    if first == 'y'
+      @first_to_move = HUMAN_MARKER
+    else
+      @first_to_move = COMPUTER_MARKER
+    end
+  end
+
+  def set_player_name
+    puts "What is your name?"
+    @player_name = gets.chomp
+  end
+
+  def introduce_computer
+    puts "Hello #{@player_name}, my name is #{@computer_name}."
+  end
+
   def clear_board
     board.reset
-    @current_marker = FIRST_TO_MOVE
+    @current_marker = @first_to_move
   end
 
   def display_welcome_message
@@ -186,16 +222,16 @@ class TTTGame
     clear_screen_and_display_board
     case board.winning_marker
     when human.marker
-      puts 'You won!'
+      puts "#{@player_name} wins!"
     when computer.marker
-      puts 'Computer won!'
+      puts "#{@computer_name} wins!"
     else
       puts 'Tie game!'
     end
   end
 
   def display_board
-    puts "You are #{human.marker}. Computer is #{computer.marker}."
+    puts "#{@player_name} is #{human.marker}. #{@computer_name} is #{computer.marker}."
     puts ''
     board.draw
   end
@@ -239,10 +275,10 @@ class TTTGame
 
   def champion?
     if human.score == 5
-      puts "You win the match!"
+      puts "#{@player_name} wins the match!"
       return true
     elsif computer.score == 5
-      puts "Computer wins the match!"
+      puts "#{@computer_name} wins the match!"
       return true
     end
   end
@@ -258,8 +294,8 @@ class TTTGame
 
     def display_score
       clear_screen
-      puts "The computer has: #{computer.score} wins."
-      puts "You have: #{human.score} wins."
+      puts "#{@computer_name} has: #{computer.score} wins."
+      puts "#{@player_name} has: #{human.score} wins."
       
     end
 
@@ -282,7 +318,7 @@ class TTTGame
     board.reset
     human.score = 0
     computer.score = 0
-    @current_marker = FIRST_TO_MOVE
+    @current_marker = @first_to_move
     clear_screen
   end
 
