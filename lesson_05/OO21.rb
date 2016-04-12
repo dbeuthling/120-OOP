@@ -1,36 +1,55 @@
 class Deck
-  FACES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace'].freeze
+  FACES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'].freeze
   VALUES = ['H', 'S', 'C', 'D'].freeze 
 
-  attr_accessor :new_deck
+  attr_accessor :deck
 
   def initialize
-    @new_deck = FACES.product(VALUES).shuffle
+    @deck = FACES.product(VALUES).shuffle
   end
 
-  def deal # does the dealer or the deck deal?
-    cards = @new_deck
-    cards.pop(2)
+  def deal(num=1)
+    @deck.pop(num)
   end
+
+  def count
+  end
+
 end
 
-module Hand
+module Hand #each player's cards
 
-  def hand
-    deck.deal
+  def total(cards)
+    sum = 0
+    rank = cards.collect { |card| card[0] }
+    rank.each do |value|
+      if value == "A"
+        sum += 11
+      elsif value.to_i == 0
+        sum += 10
+      else
+        sum += value.to_i
+      end
+    end
+    rank.count("A").times do
+      sum -= 10 if sum > 21
+    end
+    sum
+  end
+
+  def hit(player)
+    player.hand << deck.deal
   end
 
 end
 
 class Player
   include Hand
-  attr_accessor :cards
+  attr_accessor :hand
 
   def initialize
-    # what would the "data" or "states" of a Player object entail?
-    # maybe cards? a name?
-    @cards = hand
-    @name = 'Player'
+    @hand = nil
+    @name = 'Human'
   end
 
   def hit
@@ -43,21 +62,19 @@ class Player
   def busted?
   end
 
-  def total
-    # definitely looks like we need to know about "cards" to produce some total
-  end
+
+
 end
 
 class Dealer
   include Hand
+  attr_accessor :hand
 
   def initialize
-    # seems like very similar to Player... do we even need this?
+    @hand = nil
+    @name = 'Computer' # seems like very similar to Player... do we even need this?
   end
 
-  def deal
-    # does the dealer or the deck deal?
-  end
 
   def hit
   end
@@ -68,8 +85,6 @@ class Dealer
   def busted?
   end
 
-  def total
-  end
 end
 
 class Participant
@@ -85,15 +100,54 @@ class Card
 end
 
 class Game
+  attr_accessor :human, :computer, :deck
+
+  def initialize
+    @deck = Deck.new
+    @human = Player.new
+    @computer = Dealer.new
+  end
+
+
+  def deal_cards
+    human.hand = deck.deal(2)
+    computer.hand = deck.deal(2)
+  end
+
+  def show_initial_cards
+    puts "Dealer is showing:"
+    graphic_card(computer.hand[0])
+    puts "You have:"
+    graphic_card(human.hand[0])
+    graphic_card(human.hand[1])
+    puts "For a total of #{human.total(human.hand)}"
+    # p deck.instance_variable_get(:@deck).count
+  end
+
+  def graphic_card(card)
+    print ""
+    puts " __ "
+    if card[0] == '10'
+      puts "|#{card[0]}|"
+    else
+      puts "|#{card[0]} |"
+    end
+    puts "|  |"
+    puts "|_#{card[1]}|"
+    puts ""
+  end
+
+
+
+  
+
   def start
     deal_cards
     show_initial_cards
-    player_turn
-    dealer_turn
-    show_result
+    # player_turn
+    # dealer_turn
+    # show_result
   end
 end
 
-# Game.new.start
-x = Player.new.hand
-p x
+ Game.new.start
