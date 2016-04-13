@@ -2,7 +2,7 @@ class Deck
   FACES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'].freeze
   VALUES = ['H', 'S', 'C', 'D'].freeze 
 
-  attr_accessor :deck
+  # attr_accessor :deck
 
   def initialize
     @deck = FACES.product(VALUES).shuffle
@@ -19,9 +19,9 @@ end
 
 module Hand #each player's cards
 
-  def total(cards)
+  def total
     sum = 0
-    rank = cards.collect { |card| card[0] }
+    rank = @hand.collect { |card| card[0] }
     rank.each do |value|
       if value == "A"
         sum += 11
@@ -37,29 +37,36 @@ module Hand #each player's cards
     sum
   end
 
-  def hit(player)
-    player.hand << deck.deal
-  end
+  # def hit
+  #   @hand << Deck.deal
+  # end
 
 end
 
 class Player
   include Hand
-  attr_accessor :hand
+  attr_accessor :hand, :name
 
   def initialize
     @hand = nil
-    @name = 'Human'
+    @name = 'Dan' 
   end
 
-  def hit
-
-  end
+  # def hit
+  #   p @hand
+  #   @hand << @deck.deal
+  # end
 
   def stay
+    puts "#{name} stays."
   end
 
   def busted?
+    total > 21
+  end
+
+  def busted
+    puts "#{name} busted!"
   end
 
 
@@ -68,7 +75,7 @@ end
 
 class Dealer
   include Hand
-  attr_accessor :hand
+  attr_accessor :hand, :name
 
   def initialize
     @hand = nil
@@ -76,13 +83,19 @@ class Dealer
   end
 
 
-  def hit
-  end
+  # def hit
+  # end
 
   def stay
+    puts "#{name} stays."
   end
 
   def busted?
+    total > 21
+  end
+
+  def busted
+    puts "#{name} busted!"
   end
 
 end
@@ -114,13 +127,20 @@ class Game
     computer.hand = deck.deal(2)
   end
 
+  def hit(player)
+    player.hand << deck.deal.flatten
+    puts "#{player.name} drew a:"
+    graphic_card(player.hand.last)
+    puts "#{player.name}'s new total is #{player.total}"
+  end
+
   def show_initial_cards
     puts "Dealer is showing:"
     graphic_card(computer.hand[0])
     puts "You have:"
     graphic_card(human.hand[0])
     graphic_card(human.hand[1])
-    puts "For a total of #{human.total(human.hand)}"
+    puts "For a total of #{human.total}"
     # p deck.instance_variable_get(:@deck).count
   end
 
@@ -137,16 +157,80 @@ class Game
     puts ""
   end
 
+  def player_turn
+    answer = nil
+    loop do
+      loop do
+        puts "Would you like to hit or stay? (h/s) "
+        answer = gets.chomp.downcase
+        break if %w(h s).include?(answer)
+        puts "You must enter an h or s!"
+      end
+      hit(human) if answer == "h"
+      if human.busted?
+        human.busted
+        sleep (1)
+        break
+      end
+      if answer == "s"
+        human.stay
+        break
+      end
+    end
+  end
 
+  def dealer_turn
+    puts "-----Dealer Turn-----"
+    sleep(1)
+    puts "#{computer.name} has:"
+    graphic_card(computer.hand[0])
+    graphic_card(computer.hand[1])
+    puts "For a total of #{computer.total}"
+    loop do
+      if computer.total < 17
+        puts "#{computer.name} must hit!"
+        sleep (2)
+        hit(computer)
+      elsif computer.busted?
+        computer.busted
+        break
+      else        
+        computer.stay
+        break
+      end
+    end
+  end
 
-  
+  def find_winner
+    if human.total > computer.total
+      human.name
+    elsif computer.total > human.total
+      computer.name
+    else
+      nil
+    end
+  end
+
+  def show_result
+    puts "=====RESULT====="
+    if human.busted?
+      puts "#{computer.name} wins!"
+    elsif computer.busted?
+      puts "#{human.name} wins!"
+    else      
+      puts "#{human.name} stayed with #{human.total}."
+      puts "#{computer.name} stayed with #{computer.total}."
+      puts "#{find_winner} wins!" unless find_winner == nil
+      puts "Push!" if find_winner == nil
+    end
+  end
 
   def start
     deal_cards
     show_initial_cards
-    # player_turn
-    # dealer_turn
-    # show_result
+    player_turn
+    dealer_turn unless human.busted?
+    show_result
   end
 end
 
