@@ -1,9 +1,6 @@
-# Deck of cards
 class Deck
   FACES = %w(2 3 4 5 6 7 8 9 10 J Q K A).freeze
   VALUES = %w(H D C S).freeze
-
-  # attr_accessor :deck
 
   def initialize
     @deck = FACES.product(VALUES).shuffle
@@ -14,7 +11,6 @@ class Deck
   end
 end
 
-# each player's cards
 module Hand
   def total
     sum = 0
@@ -100,7 +96,7 @@ class Game
   end
 
   def show_initial_cards
-    puts 'Dealer is showing:'
+    puts "#{computer.name} is showing:"
     graphic_card(computer.hand[0])
     puts 'You have:'
     graphic_card(human.hand[0])
@@ -109,7 +105,6 @@ class Game
   end
 
   def graphic_card(card)
-    print ''
     puts ' __ '
     if card[0] == '10'
       puts "|#{card[0]}|"
@@ -145,7 +140,7 @@ class Game
 
   def dealer_turn
     puts '-----Dealer Turn-----'
-    sleep(1)
+    sleep 1
     puts "#{computer.name} has:"
     graphic_card(computer.hand[0])
     graphic_card(computer.hand[1])
