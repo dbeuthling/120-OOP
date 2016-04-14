@@ -1,6 +1,7 @@
+# Deck of cards
 class Deck
-  FACES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'].freeze
-  VALUES = ['H', 'S', 'C', 'D'].freeze 
+  FACES = %w(2 3 4 5 6 7 8 9 10 J Q K A).freeze
+  VALUES = %w(H D C S).freeze
 
   # attr_accessor :deck
 
@@ -8,22 +9,18 @@ class Deck
     @deck = FACES.product(VALUES).shuffle
   end
 
-  def deal(num=1)
+  def deal(num = 1)
     @deck.pop(num)
   end
-
-  def count
-  end
-
 end
 
-module Hand #each player's cards
-
+# each player's cards
+module Hand
   def total
     sum = 0
     rank = @hand.collect { |card| card[0] }
     rank.each do |value|
-      if value == "A"
+      if value == 'A'
         sum += 11
       elsif value.to_i == 0
         sum += 10
@@ -31,84 +28,53 @@ module Hand #each player's cards
         sum += value.to_i
       end
     end
-    rank.count("A").times do
+    rank.count('A').times do
       sum -= 10 if sum > 21
     end
     sum
   end
 
-  # def hit
-  #   @hand << Deck.deal
-  # end
-
-end
-
-class Player
-  include Hand
-  attr_accessor :hand, :name
-
-  def initialize
-    @hand = nil
-    @name = 'Dan' 
-  end
-
-  # def hit
-  #   p @hand
-  #   @hand << @deck.deal
-  # end
-
-  def stay
-    puts "#{name} stays."
-  end
-
   def busted?
     total > 21
   end
-
-  def busted
-    puts "#{name} busted!"
-  end
-
-
-
-end
-
-class Dealer
-  include Hand
-  attr_accessor :hand, :name
-
-  def initialize
-    @hand = nil
-    @name = 'Computer' # seems like very similar to Player... do we even need this?
-  end
-
-
-  # def hit
-  # end
-
-  def stay
-    puts "#{name} stays."
-  end
-
-  def busted?
-    total > 21
-  end
-
-  def busted
-    puts "#{name} busted!"
-  end
-
 end
 
 class Participant
-  # what goes in here? all the redundant behaviors from Player and Dealer?
+  include Hand
+  attr_accessor :hand, :name
+
+  def initialize
+    @hand = nil
+    set_name
+  end
+
+  def stay
+    puts "#{name} stays."
+  end
+
+  def busted
+    puts "#{name} busted!"
+  end
 end
 
+class Player < Participant
+  def set_name
+    name = ''
+    loop do
+      puts 'What\'s your name?'
+      name = gets.chomp
+      break unless name.empty?
+      puts 'Sorry, must enter a value.'
+    end
+    self.name = name
+  end
+end
 
+class Dealer < Participant
+  ROBOTS = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].freeze
 
-class Card
-  def initialize
-    # what are the "states" of a card?
+  def set_name
+    self.name = ROBOTS.sample
   end
 end
 
@@ -120,7 +86,6 @@ class Game
     @human = Player.new
     @computer = Dealer.new
   end
-
 
   def deal_cards
     human.hand = deck.deal(2)
@@ -135,44 +100,43 @@ class Game
   end
 
   def show_initial_cards
-    puts "Dealer is showing:"
+    puts 'Dealer is showing:'
     graphic_card(computer.hand[0])
-    puts "You have:"
+    puts 'You have:'
     graphic_card(human.hand[0])
     graphic_card(human.hand[1])
     puts "For a total of #{human.total}"
-    # p deck.instance_variable_get(:@deck).count
   end
 
   def graphic_card(card)
-    print ""
-    puts " __ "
+    print ''
+    puts ' __ '
     if card[0] == '10'
       puts "|#{card[0]}|"
     else
       puts "|#{card[0]} |"
     end
-    puts "|  |"
+    puts '|  |'
     puts "|_#{card[1]}|"
-    puts ""
+    puts ''
   end
 
   def player_turn
     answer = nil
     loop do
       loop do
-        puts "Would you like to hit or stay? (h/s) "
+        puts 'Would you like to hit or stay? (h/s)'
         answer = gets.chomp.downcase
         break if %w(h s).include?(answer)
-        puts "You must enter an h or s!"
+        puts 'You must enter an h or s!'
       end
-      hit(human) if answer == "h"
+      hit(human) if answer == 'h'
       if human.busted?
         human.busted
-        sleep (1)
+        sleep(1)
         break
       end
-      if answer == "s"
+      if answer == 's'
         human.stay
         break
       end
@@ -180,7 +144,7 @@ class Game
   end
 
   def dealer_turn
-    puts "-----Dealer Turn-----"
+    puts '-----Dealer Turn-----'
     sleep(1)
     puts "#{computer.name} has:"
     graphic_card(computer.hand[0])
@@ -189,12 +153,12 @@ class Game
     loop do
       if computer.total < 17
         puts "#{computer.name} must hit!"
-        sleep (2)
+        sleep(2)
         hit(computer)
       elsif computer.busted?
         computer.busted
         break
-      else        
+      else
         computer.stay
         break
       end
@@ -206,22 +170,20 @@ class Game
       human.name
     elsif computer.total > human.total
       computer.name
-    else
-      nil
     end
   end
 
   def show_result
-    puts "=====RESULT====="
+    puts '=====RESULT====='
     if human.busted?
       puts "#{computer.name} wins!"
     elsif computer.busted?
       puts "#{human.name} wins!"
-    else      
+    else
       puts "#{human.name} stayed with #{human.total}."
       puts "#{computer.name} stayed with #{computer.total}."
-      puts "#{find_winner} wins!" unless find_winner == nil
-      puts "Push!" if find_winner == nil
+      puts "#{find_winner} wins!" if find_winner
+      puts 'Push!' unless find_winner
     end
   end
 
@@ -234,4 +196,4 @@ class Game
   end
 end
 
- Game.new.start
+Game.new.start
