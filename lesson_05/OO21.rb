@@ -14,8 +14,8 @@ end
 module Hand
   def total
     sum = 0
-    rank = @hand.collect { |card| card[0] }
-    rank.each do |value|
+    ranks = @hand.collect { |card| card[0] }
+    ranks.each do |value|
       if value == 'A'
         sum += 11
       elsif value.to_i == 0
@@ -24,7 +24,7 @@ module Hand
         sum += value.to_i
       end
     end
-    rank.count('A').times do
+    ranks.count('A').times do
       sum -= 10 if sum > 21
     end
     sum
